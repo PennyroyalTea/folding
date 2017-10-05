@@ -45,7 +45,7 @@ for root, dirs, files in os.walk(PDB_files_directory):
 
 		## bad resolution
 		if (structure.header['resolution'] == None or structure.header['resolution'] > 1): #bad resolution
-			print('bad res')
+			print(file_name + ' skipped: bad resolution ' + str(structure.header['resolution']))
 			continue 
 
 		## more than 1 model
@@ -55,11 +55,11 @@ for root, dirs, files in os.walk(PDB_files_directory):
 			if (models_counter > 1):
 				break
 		if (models_counter > 1): # too many models
-			print('>1 model')
+			print(file_name + ' slipped: more than one model')
 			continue
 
 		####
-		print('OK')
+		print(file_name + ' is OK')
 
 
 
@@ -79,7 +79,6 @@ for root, dirs, files in os.walk(PDB_files_directory):
 			print(residue)
 			################ Saving the residue as PDBIO
 			id = residue.get_id()[1]
-			print('!!' + str(id))
 
 			class Selector(Select):
 				def __init__(self, id):
@@ -88,7 +87,6 @@ for root, dirs, files in os.walk(PDB_files_directory):
 				def accept_residue(self, residue):
 					if residue.get_id()[1] == self.id and not self.selected:
 						self.selected = True
-						print(residue.get_resname() + '!!!!!!!!!!!!!!!!')
 						return 1
 					else:
 						return 0
