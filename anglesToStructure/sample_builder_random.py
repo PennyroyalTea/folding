@@ -80,6 +80,7 @@ for root, dirs, files in os.walk(PDB_files_directory):
 			################ Saving the residue as PDBIO
 			id = residue.get_id()[1]
 			print('!!' + str(id))
+
 			class Selector(Select):
 				def __init__(self, id):
 					self.id = id
@@ -88,6 +89,12 @@ for root, dirs, files in os.walk(PDB_files_directory):
 					if residue.get_id()[1] == self.id and not self.selected:
 						self.selected = True
 						print(residue.get_resname() + '!!!!!!!!!!!!!!!!')
+						return 1
+					else:
+						return 0
+				def accept_atom(self, atom):
+					if (not atom.is_disordered() or atom.get_altloc() == 'A'):
+						atom.set_altloc(' ')
 						return 1
 					else:
 						return 0
