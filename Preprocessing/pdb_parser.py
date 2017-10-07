@@ -3,6 +3,7 @@ import warnings
 import time
 
 import os
+import sys
 import gzip
 
 import multiprocessing
@@ -72,7 +73,7 @@ def work(folders_to_process, id):
 	printer.close()
 	logger.close()
 
-def check(structure): # checks if a structure is suitable for work
+def check(structure, name): # checks if a structure is suitable for work
 	"""
 	0: structure is ok
 
@@ -81,6 +82,9 @@ def check(structure): # checks if a structure is suitable for work
 	2: more than one model
 	3: it's RNA/DNA or whatever
 	4: it has disordered atoms
+	5: one of it's residues is incomplete
+	6: one of the chains doesn't contain any known residues
+	7: one of the residues is unknown (X)
 	"""
 
 
@@ -106,6 +110,7 @@ def check(structure): # checks if a structure is suitable for work
 	for residue in structure.get_residues():
 		residue_name = residue.get_resname().lower().strip()
 		if residue.get_id()[0].strip() == '' and seq1(residue_name) == '': # it's not a hetatm(water/acid) but also not a known aminoacid... what is it? probably a DNA!
+			
 			logger.write('3 : has unknown atoms(probably a DNA or RNA or whatever) -> skipped\n')
 			return False
 	####
@@ -117,12 +122,56 @@ def check(structure): # checks if a structure is suitable for work
 			return False
 	####
 
+	#### check if it has incomplete residues
+	for residue in structure.get_residues():
+		if (residue.get_id()[0].strip() != ''):
+			continue
+		atom_counter = 0
+		atoms = []
+		
+		for atom in residue.get_atoms():
+			atoms.append(atom)
+			atom_counter += 1
+			if atom_counter == 3:
+				break
+
+		atom_names = [atom.get_name().strip().lower() for atom in atoms]
+		if atom_counter < 3 or atom_names[0] != 'n' or atom_names[1] != 'ca' or atom_names[2] != 'c':
+			logger.write('5 : has incomplete or wrong built residue -> skipped\n')
+			return False
+
+	####
+
+	#### check if all the chains contain known residues
+	for chain in structure.get_chains():
+		has_known_residue = False
+		for residue in chain.get_residues():
+			residue_name = residue.get_resname().lower().strip()
+			if residue.get_id()[0].strip() == '' and seq1(residue_name) != '': # if not a hetatm but a known residue
+				has_known_residue = True
+				break
+		if not has_known_residue:
+			logger.write('6 : does not have any known residues -> skipped\n')
+			return False
+
+	####
+	
+	#### check if all the residues are known
+	known = {'a', 'r', 'n', 'd', 'c', 'e', 'q', 'g', 'h', 'i', 'l', 'k', 'm', 'f', 'p', 's', 't', 'w', 'y', 'v'}
+	for residue in structure.get_residues():
+		residue_name = residue.get_resname()
+		if residue.get_id()[0].strip() == '' and seq1(residue_name) != '': # not a hetatm but a known residue
+			if not seq1(residue_name).lower() in known:
+				logger.write('7 : one of residues is unknown(' + seq1(residue_name).lower() + ') -> skipped\n')
+				return False
+	####
+
 	logger.write('0 : structure is OK\n')
 	return True
 
 
 def handle_PDB(structure, name):
-	if not check(structure): # structure is brokes some way
+	if not check(structure, name): # structure is brokes some way
 		return
 
 	for chain in structure.get_chains():
@@ -132,16 +181,23 @@ def handle_PDB(structure, name):
 		for residue in chain.get_residues():
 
 			residue_name = residue.get_resname().lower().strip() # name of residue in 3-letters style, e.g. gly
+			
 
-			if (residue.get_id()[0].strip() == ''): # if it's not a hetatm 
-				sequence.append(seq1(residue_name)) # adds name of residue in 1-letter style
+			if (residue.get_id()[0].strip() != ''): # if it's a hetatm
+				continue
 
-				atoms_added = 0
-				for atom in residue.get_atoms():
-					atoms.append(atom)
-					atoms_added += 1
-					if atoms_added == 3: # we are only interested in first 3 atoms : N Ca C
-						break
+			if name == '470d':
+				print(residue_name + ' ' + seq1(residue_name))
+
+			sequence.append(seq1(residue_name))
+
+			atoms_added = 0
+			for atom in residue.get_atoms():
+				atoms.append(atom)
+				atoms_added += 1
+				if atoms_added == 3: # we are only interested in first 3 atoms : N Ca C
+					break
+
 		"""
 
 		calculating angles from atom positions
@@ -168,6 +224,14 @@ def handle_PDB(structure, name):
 			angles.append(str(angleB))
 			angles.append(str(angleC))
 
+		if (len(angles) != 3 * (len(sequence) - 1)):
+			print(name + ' is bad!')
+			print(str(len(sequence)) + " " + str(len(angles)))
+
+		if '' in angles:
+			print(name + ' is baadd! one of the angles is empty!')
+			print(str(len(sequence)) + " " + str(len(angles)))
+
 		printer.write(''.join(sequence) + '\n')
 		printer.write(' '.join(angles) + '\n')
 
@@ -176,6 +240,7 @@ def handle_PDB(structure, name):
 
 
 if __name__ == '__main__': #it's a main thread
+
 	begin_time = time.time()
 
 

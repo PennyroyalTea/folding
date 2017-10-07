@@ -1,6 +1,6 @@
 import os
 import time
-
+import sys
 """
 
 Cuts all the chains into chains of length k (usually, 9) and makes ONE file with them.
@@ -37,12 +37,20 @@ for file_name in os.listdir(processed_files_folder):
 	lines = content.split('\n')
 
 	for i in range(0, len(lines) - 1, 2):
-		sequence = lines[i]
-		angles = lines[i + 1].split(' ')
+		sequence = lines[i].strip()
+		angles = lines[i + 1].strip().split(' ')
 
 		for j in range(len(sequence) - k + 1):
 			cur_sequence = sequence[j : (j + k)]
 			cur_angles = angles[(3 * j) : (3 * (j + k - 1))]
+
+			################################################################################################################################
+			if (len(cur_angles) != 3 * (len(cur_sequence) - 1)):
+				print(file_name + " " + cur_sequence + ' is bad:(')
+				print (str(len(sequence)) + ' ' + str(len(angles)))
+				sys.exit(-1)
+			################################################################################################################################
+
 
 			printer.write(cur_sequence + '\n')
 			printer.write(' '.join(cur_angles) + '\n')

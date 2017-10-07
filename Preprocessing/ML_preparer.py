@@ -37,10 +37,12 @@ train_probability = 70 # percent of tests that go to train file
 test_probability = 25 # percent of tests that go to test file
 # others go to closed test
 
+part = 5 # percantage of kmers to pass
+
 def work(s): #makes float from strign and divides it by pi
 	res = float(s) / math.pi
-	res = min(res, math.pi)
-	res = max(res, -math.pi)
+	res = min(res, 1)
+	res = max(res, -1)
 	return res
 
 start_time = time.time()
@@ -56,8 +58,13 @@ with open(kmers_path) as file:
 			break
 		
 		angles_line = file.readline().rstrip()
-		angles = map(work, angles_line.split())
+		angles = map(work, angles_line.split(' '))
 
+		random_integer = random.randint(0, 99)
+
+		if random_integer >= part:
+			continue
+		
 		random_integer = random.randint(0, 99)
 
 		if random_integer < train_probability:
