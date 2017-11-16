@@ -120,7 +120,7 @@ def fill_data(filename): # fills with data from file
 
 
 activation = 'tanh'
-epochs = 50
+epochs = 5000
 
 
 
@@ -165,7 +165,7 @@ else:
 
 	model.compile(loss='mean_squared_error', metrics=['mse', 'mae'], optimizer=optimizers.SGD(lr=0.1, decay=1e-6, momentum=0.95, nesterov=True))
 
-	model.fit(x = X_train, y = y_train, epochs = epochs, batch_size = 128)
+	model.fit(x = X_train, y = y_train, epochs = epochs, batch_size = 64)
 
 model.save(model_filename)
 
