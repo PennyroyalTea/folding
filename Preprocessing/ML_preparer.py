@@ -13,10 +13,18 @@ Prepares the k-mers to machine learning:
 Boris Starkov(c)
 
 """
+ninemers_file = 'fixed_size_chains'
+
+objects_to_process = -1 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ very important param. How much objects to take. if = -1 all the objects will be taken.
+
+processed_objects = 0
+
+
+
 
 data_folder = '../Data'
 
-kmers_path = os.path.join(data_folder, 'fixed_size_chains')
+kmers_path = os.path.join(data_folder, ninemers_file)
 
 #
 datasets_folder = os.path.join(data_folder, 'Datasets')
@@ -37,7 +45,7 @@ train_probability = 70 # percent of tests that go to train file
 test_probability = 25 # percent of tests that go to test file
 # others go to closed test
 
-part = 5 # percantage of kmers to pass
+part = 1 # percantage of kmers to pass
 
 def work(s): #makes float from strign and divides it by pi
 	res = float(s) / math.pi
@@ -78,6 +86,11 @@ with open(kmers_path) as file:
 		else:
 			closed_test_printer.write(sequence_line + '\n')
 			closed_test_printer.write(' '.join(map(str, angles)) + '\n')
+
+		processed_objects  += 1
+		print(processed_objects)
+		if processed_objects == objects_to_process:
+			break
 
 print('Done in ' + str(time.time() - start_time) + ' seconds.')
 
